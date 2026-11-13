@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoFridge AI - SDGs 12 연계 스마트 제로웨이스트 냉장고</title>
+    <!-- 모바일 웹 앱(PWA) 설정 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#10b981">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Noto Sans KR & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans KR"', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        sdg12: '#BF8B2E', // UN SDG 12 Official Color
+                        eco: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* AI 비전 스캐너 애니메이션 */
+        @keyframes scanLine {
+            0% { top: 0%; opacity: 0.2; }
+            50% { top: 92%; opacity: 1; }
+            100% { top: 0%; opacity: 0.2; }
+        }
+        .animate-scan {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #10b981, #34d399, #10b981, transparent);
+            box-shadow: 0 0 15px 3px rgba(16, 185, 129, 0.7);
+            animation: scanLine 1.8s ease-in-out infinite;
+        }
+
+        /* 부드러운 페이드인 효과 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.35s ease-out forwards;
+        }
+
+        /* 커스텀 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col pb-20 md:pb-0">
+
+    <!-- 상단 네비게이션 바 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-leaf text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-bold text-lg sm:text-xl text-slate-900 tracking-tight">EcoFridge <span class="text-emerald-600">AI</span></h1>
+                        <span class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                            UN SDGs 12 연계
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 hidden sm:block">AI 식재료 신선도 예측 & 제로웨이스트 레시피 어시스턴트</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 sm:gap-2.5">
+                <button onclick="downloadAppHtml()" title="HTML 코드 파일 다운로드" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold shadow-sm transition cursor-pointer">
+                    <i class="fa-solid fa-download text-emerald-400"></i>
+                    <span class="hidden md:inline">코드 다운로드</span>
+                    <span class="md:hidden">저장</span>
+                </button>
+                <button onclick="openShareModal()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition cursor-pointer">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>앱 공유·링크</span>
+                </button>
+                <button onclick="openSdgModal()" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs sm:text-sm font-medium transition cursor-pointer">
+                    <span class="w-5 h-5 rounded-md bg-[#BF8B2E] text-white font-bold text-xs flex items-center justify-center">12</span>
+                    <span class="hidden sm:inline">SDGs 목표 보기</span>
+                    <span class="sm:hidden">SDGs 12</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨테이너 -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- 상단 요약 배너: 생활 속 문제 해결 & SDGs 12.3 환경 기여 대시보드 -->
+        <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div class="space-y-2 max-w-2xl">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">
+                        <i class="fa-solid fa-earth-asia"></i>
+                        <span>SDGs 12.3: 2030년까지 1인당 음식물 쓰레기 절반 감축</span>
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-900">
+                        냉장고 속 방치된 식재료, AI로 가치 있는 한 끼로 바꾸세요
+                    </h2>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        가정 내 음식물 쓰레기의 약 30%는 소비기한을 놓쳐 버려지는 식재료에서 발생합니다. 
+                        <strong>AI 비전 인식</strong>으로 식재료를 자동 등록하고, <strong>임박 재료 우선 알고리즘</strong>으로 맞춤 레시피를 추천받아 탄소 배출을 줄여보세요.
+                    </p>
+                </div>
+
+                <!-- 실시간 환경 기여 지표 카드 3종 -->
+                <div class="grid grid-cols-3 gap-2.5 sm:gap-4 shrink-0">
+                    <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3 sm:p-4 text-center">
+                        <div class="text-emerald-600 text-lg sm:text-xl mb-1"><i class="fa-solid fa-seedling"></i></div>
+                        <div class="text-xs text-slate-500 font-medium">감축 음식물</div>
+                        <div id="stat-waste" class="text-base sm:text-xl font-bold text-slate-900 mt-0.5">1,250g</div>
+                    </div>
+                    <div class="bg-teal-50/70 border border-teal-100 rounded-2xl p-3 sm:p-4 text-center">
+                        <div class="text-teal-600 text-lg sm:text-xl mb-1"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                        <div class="text-xs text-slate-500 font-medium">탄소 저감량</div>
+                        <div id="stat-co2" class="text-base sm:text-xl font-bold text-slate-900 mt-0.5">3.12kg</div>
+                    </div>
+                    <div class="bg-amber-50/70 border border-amber-100 rounded-2xl p-3 sm:p-4 text-center">
+                        <div class="text-amber-600 text-lg sm:text-xl mb-1"><i class="fa-solid fa-piggy-bank"></i></div>
+                        <div class="text-xs text-slate-500 font-medium">식비 절약액</div>
+                        <div id="stat-money" class="text-base sm:text-xl font-bold text-slate-900 mt-0.5">14,500원</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2단 핵심 워크스페이스 -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- 왼쪽 컬럼 (5칸): AI 식재료 스캐너 & 스마트 냉장고 인벤토리 -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- AI 식재료 등록 패널 (AI 비전 스캔 / 직접 입력 탭) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="border-b border-slate-100 bg-slate-50/60 p-4 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-camera-retro text-emerald-600"></i>
+                            <span>AI 식재료 스마트 등록</span>
+                        </h3>
+                        <div class="flex bg-slate-200/70 p-1 rounded-xl text-xs font-semibold">
+                            <button id="tab-ai-scan" onclick="switchInputTab('scan')" class="px-3 py-1.5 rounded-lg bg-white text-emerald-700 shadow-sm transition cursor-pointer">
+                                AI 비전 스캔
+                            </button>
+                            <button id="tab-manual" onclick="switchInputTab('manual')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition cursor-pointer">
+                                직접 입력
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 탭 1: AI 비전 스캐너 시뮬레이터 -->
+                    <div id="panel-ai-scan" class="p-4 sm:p-5 space-y-4">
+                        <div id="scan-dropzone" class="relative border-2 border-dashed border-emerald-300 bg-emerald-50/30 hover:bg-emerald-50/70 rounded-2xl p-5 text-center transition cursor-pointer overflow-hidden" onclick="document.getElementById('image-upload').click()">
+                            <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                            
+                            <!-- 기본 업로드 안내 UI -->
+                            <div id="scan-placeholder" class="space-y-2 py-2">
+                                <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-xl">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                </div>
+                                <p class="text-sm font-semibold text-slate-800">냉장고 내부 또는 장보기 영수증 사진 업로드</p>
+                                <p class="text-xs text-slate-500">AI Vision이 식재료 품목과 권장 소비기한을 자동 분석합니다</p>
+                            </div>
+
+                            <!-- 스캔 진행 중 프리뷰 UI -->
+                            <div id="scan-preview-container" class="hidden relative rounded-xl overflow-hidden max-h-48 mx-auto">
+                                <img id="scan-preview-img" src="" alt="스캔 이미지" class="w-full h-44 object-cover rounded-xl">
+                                <div id="scan-laser" class="animate-scan"></div>
+                                <div class="absolute inset-0 bg-slate-900/40 flex items-center justify-center">
+                                    <span class="px-3 py-1.5 rounded-full bg-slate-900/80 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                                        <i class="fa-solid fa-circle-notch fa-spin"></i> AI 객체 인식 및 신선도 분석 중...
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 빠른 AI 샘플 스캔 프리셋 버튼 (사진이 없어도 즉시 테스트 가능) -->
+                        <div class="space-y-2">
+                            <p class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                                <i class="fa-solid fa-bolt text-amber-500"></i> 사진 없이 AI 인식 즉시 체험하기:
+                            </p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="runSampleAiScan('bachelor')" class="p-2.5 rounded-xl border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 text-xs font-medium text-slate-700 transition text-center cursor-pointer">
+                                    🥬 자취생 채소칸
+                                </button>
+                                <button onclick="runSampleAiScan('receipt')" class="p-2.5 rounded-xl border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 text-xs font-medium text-slate-700 transition text-center cursor-pointer">
+                                    🧾 마트 영수증
+                                </button>
+                                <button onclick="runSampleAiScan('protein')" class="p-2.5 rounded-xl border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 text-xs font-medium text-slate-700 transition text-center cursor-pointer">
+                                    🥩 단백질/유제품
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 탭 2: 직접 입력 폼 -->
+                    <form id="panel-manual" onsubmit="handleManualAdd(event)" class="hidden p-4 sm:p-5 space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">식재료명</label>
+                                <input type="text" id="input-name" placeholder="예: 애호박, 두부" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">카테고리</label>
+                                <select id="input-category" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                    <option value="채소/과일">🥬 채소/과일</option>
+                                    <option value="육류/수산">🥩 육류/수산</option>
+                                    <option value="유제품/난류">🥚 유제품/난류</option>
+                                    <option value="가공/반찬">🥫 가공/반찬</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">남은 소비기한 (일)</label>
+                                <input type="number" id="input-days" min="0" max="60" value="3" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">예상 중량 (g)</label>
+                                <input type="number" id="input-weight" min="50" max="5000" step="50" value="200" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition cursor-pointer">
+                            <i class="fa-solid fa-plus mr-1"></i> 냉장고에 추가하기
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 내 냉장고 식재료 목록 (신선도/긴급도 순 정렬) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-temperature-low text-sky-500"></i>
+                                <span>내 냉장고 인벤토리</span>
+                                <span id="inventory-count" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">0</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">AI가 소비기한 임박 순으로 자동 정렬합니다</p>
+                        </div>
+                        <select id="filter-urgency" onchange="renderInventory()" class="text-xs border border-slate-200 rounded-xl px-2.5 py-1.5 bg-slate-50 text-slate-700 font-medium focus:outline-none">
+                            <option value="all">전체 보기</option>
+                            <option value="urgent">🚨 임박 재료만 (D-3 이하)</option>
+                        </select>
+                    </div>
+
+                    <div id="inventory-list" class="p-4 space-y-2.5 max-h-[420px] overflow-y-auto">
+                        <!-- 자바스크립트로 식재료 카드 렌더링 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽 컬럼 (7칸): AI 제로웨이스트 맞춤 레시피 추천 -->
+            <div class="lg:col-span-7 space-y-4">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold">AI 셰프 엔진</span>
+                                <h3 class="font-bold text-lg text-slate-900">제로웨이스트 맞춤 레시피</h3>
+                            </div>
+                            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                                소비기한이 임박한 재료를 최우선으로 소진하는 레시피를 추천합니다.
+                            </p>
+                        </div>
+                        <button onclick="regenerateRecipes()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition shrink-0 cursor-pointer">
+                            <i class="fa-solid fa-rotate text-emerald-400"></i>
+                            <span>AI 레시피 재분석</span>
+                        </button>
+                    </div>
+
+                    <!-- 임박 재료 하이라이트 바 -->
+                    <div id="urgent-banner" class="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-100 flex items-center gap-3 text-xs sm:text-sm text-rose-800">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-500 text-base shrink-0"></i>
+                        <div id="urgent-text">소비기한 임박 재료를 분석하고 있습니다...</div>
+                    </div>
+
+                    <!-- 추천 레시피 카드 리스트 -->
+                    <div id="recipe-list" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 자바스크립트로 레시피 카드 렌더링 -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-700">EcoFridge AI</span>
+                <span>|</span>
+                <span>인공지능 기반 생활 문제 해결 & UN SDGs 12(책임감 있는 소비와 생산) 프로젝트</span>
+            </div>
+            <div>
+                <span>탄소 저감량 환산 기준: 음식물 쓰레기 1kg 감축 시 약 2.5kg CO₂e 저감 효과</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 레시피 상세 & 요리 완료 모달 -->
+    <div id="recipe-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 fade-in">
+            <div id="recipe-modal-content" class="p-6 space-y-5">
+                <!-- 동적 삽입 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SDGs 12 목표 안내 모달 -->
+    <div id="sdg-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden fade-in">
+            <div class="bg-[#BF8B2E] p-6 text-white flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="text-4xl font-extrabold border-2 border-white/80 rounded-xl px-3 py-1">12</div>
+                    <div>
+                        <p class="text-xs uppercase tracking-wider opacity-90">UN Sustainable Development Goals</p>
+                        <h3 class="text-xl font-bold">지속가능한 소비와 생산</h3>
+                    </div>
+                </div>
+                <button onclick="closeSdgModal()" class="text-white/80 hover:text-white text-xl p-1 cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4 text-sm text-slate-700 leading-relaxed">
+                <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200">
+                    <h4 class="font-bold text-amber-900 mb-1">🎯 세부 목표 12.3 (음식물 쓰레기 감축)</h4>
+                    <p class="text-xs text-amber-800">
+                        2030년까지 소매 및 소비자 수준에서 전 세계 1인당 음식물 쓰레기를 절반으로 줄이고, 수확 후 손실을 포함한 생산 및 공급망에서의 식량 손실을 감소시킵니다.
+                    </p>
+                </div>
+                <div class="space-y-2">
+                    <h4 class="font-bold text-slate-900">🤖 EcoFridge AI의 문제 해결 방식</h4>
+                    <ul class="list-disc pl-5 space-y-1.5 text-slate-600">
+                        <li><strong>AI 객체 인식(Vision):</strong> 영수증 및 냉장고 사진 촬영만으로 식재료를 간편하게 디지털화하여 방치를 예방합니다.</li>
+                        <li><strong>신선도 우선순위 알고리즘:</strong> 소비기한이 임박한(D-3 이하) 식재료에 가중치를 부여해 먼저 소진하도록 유도합니다.</li>
+                        <li><strong>환경 영향 시각화:</strong> 버려질 뻔한 식재료를 요리할 때마다 감축된 탄소(CO₂)와 식비 절약 효과를 수치로 보여주어 지속적인 실천을 돕습니다.</li>
+                    </ul>
+                </div>
+                <button onclick="closeSdgModal()" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition cursor-pointer">
+                    확인했습니다
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 앱 링크 공유 및 모바일 설치 안내 모달 -->
+    <div id="share-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden fade-in">
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-600 p-5 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-mobile-screen-button text-xl"></i>
+                    <div>
+                        <h3 class="font-bold text-lg">EcoFridge AI 앱 실행 & 링크 공유</h3>
+                        <p class="text-xs text-emerald-100">웹 링크 접속 및 스마트폰 홈 화면 앱 설치</p>
+                    </div>
+                </div>
+                <button onclick="closeShareModal()" class="text-white/80 hover:text-white text-xl p-1 cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4 text-sm text-slate-700">
+                <!-- 현재 앱 접속 링크 복사 -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-600">현재 앱 실행 링크 (URL)</label>
+                    <div class="flex gap-2">
+                        <input id="app-share-url" type="text" readonly class="flex-1 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-600 focus:outline-none">
+                        <button onclick="copyAppLink()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shrink-0 transition cursor-pointer">
+                            <i class="fa-regular fa-copy mr-1"></i>복사
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR 코드 영역 -->
+                <div class="flex items-center gap-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                    <img id="app-qr-img" src="" alt="앱 QR 코드" onerror="this.src='https://placehold.co/120x120/10b981/ffffff?text=EcoFridge+QR'" class="w-20 h-20 rounded-lg border border-slate-200 bg-white p-1 shrink-0">
+                    <div class="space-y-1 text-xs">
+                        <div class="font-bold text-slate-900">📱 스마트폰에서 바로 열기</div>
+                        <p class="text-slate-500 leading-relaxed">
+                            모바일 브라우저 메뉴에서 <strong>[홈 화면에 추가]</strong>를 누르면 일반 스마트폰 앱 아이콘처럼 설치되어 실행됩니다.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 무료 영구 링크 배포 가이드 -->
+                <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-2.5">
+                    <div class="font-bold text-amber-900">🌐 나만의 영구 공유 링크 만드는 법 (10초 완료)</div>
+                    <p class="text-amber-800 leading-relaxed">
+                        아래 버튼으로 HTML 코드 파일을 다운로드한 뒤 <strong>Netlify Drop (app.netlify.com/drop)</strong>에 드래그하면 즉시 누구나 접속 가능한 인터넷 링크(`https://...`)가 생성됩니다.
+                    </p>
+                    <button onclick="downloadAppHtml()" class="w-full py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-file-code"></i>
+                        <span>eco_fridge_ai.html 코드 파일 다운로드</span>
+                    </button>
+                </div>
+
+                <button onclick="closeShareModal()" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition cursor-pointer">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모바일 전용 하단 앱 탭 바 -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex items-center justify-around shadow-lg">
+        <button onclick="navigateAppSection('top')" class="flex flex-col items-center gap-0.5 px-3 py-1 text-emerald-600 font-semibold text-[11px] cursor-pointer">
+            <i class="fa-solid fa-chart-pie text-base"></i>
+            <span>SDGs 홈</span>
+        </button>
+        <button onclick="navigateAppSection('scan')" class="flex flex-col items-center gap-0.5 px-3 py-1 text-slate-600 hover:text-emerald-600 font-medium text-[11px] cursor-pointer">
+            <i class="fa-solid fa-camera text-base"></i>
+            <span>AI 스캔</span>
+        </button>
+        <button onclick="navigateAppSection('inventory')" class="flex flex-col items-center gap-0.5 px-3 py-1 text-slate-600 hover:text-emerald-600 font-medium text-[11px] cursor-pointer">
+            <i class="fa-solid fa-snowflake text-base"></i>
+            <span>냉장고</span>
+        </button>
+        <button onclick="navigateAppSection('recipes')" class="flex flex-col items-center gap-0.5 px-3 py-1 text-slate-600 hover:text-emerald-600 font-medium text-[11px] cursor-pointer">
+            <i class="fa-solid fa-utensils text-base"></i>
+            <span>AI 레시피</span>
+        </button>
+        <button onclick="openShareModal()" class="flex flex-col items-center gap-0.5 px-3 py-1 text-slate-600 hover:text-emerald-600 font-medium text-[11px] cursor-pointer">
+            <i class="fa-solid fa-link text-base"></i>
+            <span>앱 링크</span>
+        </button>
+    </nav>
+
+    <!-- 토스트 알림 컨테이너 -->
+    <div id="toast-container" class="fixed bottom-20 md:bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <script>
+        /**
+         * 1. 초기 상태 및 데이터 정의 (로컬 스토리지 연동으로 앱 데이터 유지)
+         */
+        const DEFAULT_STATS = {
+            wasteSavedGrams: 1250,
+            co2SavedKg: 3.12,
+            moneySavedKrw: 14500
+        };
+
+        const DEFAULT_INVENTORY = [
+            { id: 1, name: '애호박', category: '채소/과일', daysLeft: 1, weight: 250 },
+            { id: 2, name: '두부', category: '가공/반찬', daysLeft: 2, weight: 300 },
+            { id: 3, name: '대파', category: '채소/과일', daysLeft: 3, weight: 150 },
+            { id: 4, name: '계란', category: '유제품/난류', daysLeft: 5, weight: 300 },
+            { id: 5, name: '김치', category: '가공/반찬', daysLeft: 14, weight: 500 },
+            { id: 6, name: '돼지고기 앞다리살', category: '육류/수산', daysLeft: 2, weight: 300 }
+        ];
+
+        function loadAppState() {
+            try {
+                const savedStats = localStorage.getItem('ecofridge_stats');
+                const savedInv = localStorage.getItem('ecofridge_inventory');
+                return {
+                    stats: savedStats ? JSON.parse(savedStats) : { ...DEFAULT_STATS },
+                    inventory: savedInv ? JSON.parse(savedInv) : [...DEFAULT_INVENTORY]
+                };
+            } catch (e) {
+                return { stats: { ...DEFAULT_STATS }, inventory: [...DEFAULT_INVENTORY] };
+            }
+        }
+
+        function saveAppState() {
+            try {
+                localStorage.setItem('ecofridge_stats', JSON.stringify(stats));
+                localStorage.setItem('ecofridge_inventory', JSON.stringify(inventory));
+            } catch (e) {
+                console.warn('로컬 저장소 접근 제한 환경:', e);
+            }
+        }
+
+        const initialState = loadAppState();
+        let stats = initialState.stats;
+        let inventory = initialState.inventory;
+
+        // 표준 제로웨이스트 레시피 데이터베이스
+        const recipeDatabase = [
+            {
+                id: 'r1',
+                title: '애호박 두부 짜글이 찌개',
+                time: '15분',
+                difficulty: '초급',
+                emoji: '🍲',
+                ingredients: ['애호박', '두부', '대파', '돼지고기'],
+                optional: ['양파', '김치', '고추'],
+                description: '물러지기 쉬운 애호박과 유통기한이 짧은 두부를 한 번에 소진할 수 있는 밥도둑 짜글이입니다.',
+                steps: [
+                    '애호박과 두부는 한입 크기의 깍둑썰기로 준비하고, 대파는 송송 썰어줍니다.',
+                    '냄비에 고기(또는 참치)와 고추장 1.5큰술, 고춧가루 1큰술, 다진 마늘을 넣고 가볍게 볶아줍니다.',
+                    '물 200ml와 손질한 애호박, 두부를 넣고 중불에서 국물이 자작해질 때까지 10분간 끓입니다.',
+                    '마지막에 대파를 듬뿍 올리고 참기름 한 바퀴를 둘러 완성합니다.'
+                ]
+            },
+            {
+                id: 'r2',
+                title: '자투리 채소 계란말이 & 토스트',
+                time: '10분',
+                difficulty: '초급',
+                emoji: '🍳',
+                ingredients: ['계란', '대파', '애호박'],
+                optional: ['당근', '양파', '치즈', '식빵'],
+                description: '냉장고 속 자투리 채소를 잘게 다져 넣어 영양과 식감을 살린 초간단 제로웨이스트 메뉴입니다.',
+                steps: [
+                    '애호박, 대파 등 남은 채소를 최대한 잘게 다져줍니다.',
+                    '볼에 계란 3~4개를 풀고 소금 약간과 다진 채소를 넣어 고루 섞습니다.',
+                    '약불로 달군 팬에 기름을 두르고 계란물을 얇게 부어가며 돌돌 말아줍니다.',
+                    '한 김 식힌 뒤 먹기 좋은 두께로 썰어 접시에 담아냅니다.'
+                ]
+            },
+            {
+                id: 'r3',
+                title: '돼지고기 김치 두부볶음',
+                time: '20분',
+                difficulty: '중급',
+                emoji: '🥘',
+                ingredients: ['돼지고기', '김치', '두부', '대파'],
+                optional: ['양파', '버섯'],
+                description: '신선도가 떨어지기 전에 빠르게 조리해야 하는 생고기와 두부를 활용한 든든한 한 끼입니다.',
+                steps: [
+                    '두부는 도톰하게 썰어 물기를 제거한 뒤 팬에 노릇하게 앞뒤로 구워 접시 가장자리에 둘러줍니다.',
+                    '팬에 돼지고기와 김치를 넣고 설탕 0.5큰술, 고춧가루 1큰술을 넣어 충분히 볶아줍니다.',
+                    '대파와 양파를 넣고 센 불에서 2분간 더 볶아 불향을 입힙니다.',
+                    '구워둔 두부 가운데에 볶은 김치와 고기를 듬뿍 담아 완성합니다.'
+                ]
+            },
+            {
+                id: 'r4',
+                title: '초간단 파기름 계란 덮밥',
+                time: '8분',
+                difficulty: '초급',
+                emoji: '🍚',
+                ingredients: ['대파', '계란'],
+                optional: ['양파', '스팸', '참치캔', '버섯'],
+                description: '시들해지기 직전의 대파를 향긋한 파기름으로 변신시켜 만드는 8분 컷 에코 덮밥입니다.',
+                steps: [
+                    '대파를 송송 썰어 식용유 2큰술을 두른 팬에 약불로 볶아 향긋한 파기름을 냅니다.',
+                    '파가 노릇해지면 한쪽으로 밀어두고 계란 2개를 깨뜨려 스크램블을 만듭니다.',
+                    '간장 1.5큰술, 굴소스(또는 설탕) 0.5큰술을 팬 가장자리에 둘러 불맛을 낸 뒤 섞어줍니다.',
+                    '따뜻한 밥 위에 올리고 통깨를 뿌려 마무리합니다.'
+                ]
+            },
+            {
+                id: 'r5',
+                title: '크리미 우유 감자 버섯 스튜',
+                time: '20분',
+                difficulty: '중급',
+                emoji: '🥣',
+                ingredients: ['우유', '감자', '버섯'],
+                optional: ['양파', '닭가슴살', '치즈', '식빵'],
+                description: '유통기한이 임박한 우유와 자투리 채소를 부드럽게 끓여낸 속 편한 원팟 스튜입니다.',
+                steps: [
+                    '감자, 버섯, 양파는 한입 크기로 썰어 버터나 올리브유에 3분간 볶아줍니다.',
+                    '재료가 잠길 정도로 우유를 붓고 소금, 후추로 간을 한 뒤 약불에서 뭉근하게 끓입니다.',
+                    '감자가 포슬포슬하게 익으면 치즈 1장을 넣어 농도를 맞춥니다.',
+                    '남은 식빵이 있다면 구워서 곁들여 드시면 더욱 좋습니다.'
+                ]
+            }
+        ];
+
+        /**
+         * 2. UI 유틸리티 (토스트 알림, 탭 전환, 모달 제어)
+         */
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-slate-900 text-white border-emerald-500',
+                warning: 'bg-amber-900 text-white border-amber-400',
+                info: 'bg-sky-900 text-white border-sky-400'
+            };
+            const icons = {
+                success: 'fa-circle-check text-emerald-400',
+                warning: 'fa-triangle-exclamation text-amber-400',
+                info: 'fa-wand-magic-sparkles text-sky-400'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border-l-4 text-xs sm:text-sm font-medium fade-in ${colors[type] || colors.success}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type] || icons.success} text-base shrink-0"></i>
+                <span class="leading-snug">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(8px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3400);
+        }
+
+        function switchInputTab(tab) {
+            const scanTab = document.getElementById('tab-ai-scan');
+            const manualTab = document.getElementById('tab-manual');
+            const scanPanel = document.getElementById('panel-ai-scan');
+            const manualPanel = document.getElementById('panel-manual');
+
+            if (tab === 'scan') {
+                scanTab.className = 'px-3 py-1.5 rounded-lg bg-white text-emerald-700 shadow-sm transition cursor-pointer';
+                manualTab.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition cursor-pointer';
+                scanPanel.classList.remove('hidden');
+                manualPanel.classList.add('hidden');
+            } else {
+                manualTab.className = 'px-3 py-1.5 rounded-lg bg-white text-emerald-700 shadow-sm transition cursor-pointer';
+                scanTab.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition cursor-pointer';
+                manualPanel.classList.remove('hidden');
+                scanPanel.classList.add('hidden');
+            }
+        }
+
+        function openSdgModal() {
+            document.getElementById('sdg-modal').classList.remove('hidden');
+        }
+
+        function closeSdgModal() {
+            document.getElementById('sdg-modal').classList.add('hidden');
+        }
+
+        function closeRecipeModal() {
+            document.getElementById('recipe-modal').classList.add('hidden');
+        }
+
+        function openShareModal() {
+            const urlInput = document.getElementById('app-share-url');
+            const qrImg = document.getElementById('app-qr-img');
+            const currentUrl = window.location.href.startsWith('http')
+                ? window.location.href
+                : 'https://ecofridge-ai-sdg12.web.app';
+
+            urlInput.value = currentUrl;
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(currentUrl)}`;
+            document.getElementById('share-modal').classList.remove('hidden');
+        }
+
+        function closeShareModal() {
+            document.getElementById('share-modal').classList.add('hidden');
+        }
+
+        function copyAppLink() {
+            const urlInput = document.getElementById('app-share-url');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                showToast('앱 접속 링크가 클립보드에 복사되었습니다!', 'success');
+            } catch (err) {
+                showToast('링크 복사에 실패했습니다. 직접 선택해 복사해주세요.', 'warning');
+            }
+        }
+
+        function downloadAppHtml() {
+            try {
+                // 현재 DOM을 복제하여 열린 모달과 토스트를 초기 상태로 정리한 뒤 파일 생성
+                const clone = document.documentElement.cloneNode(true);
+                ['recipe-modal', 'sdg-modal', 'share-modal'].forEach(id => {
+                    const modalEl = clone.querySelector('#' + id);
+                    if (modalEl) modalEl.classList.add('hidden');
+                });
+                const toastEl = clone.querySelector('#toast-container');
+                if (toastEl) toastEl.innerHTML = '';
+
+                const htmlContent = '<!DOCTYPE html>\n' + clone.outerHTML;
+                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'eco_fridge_ai.html';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                showToast('eco_fridge_ai.html 코드 파일이 다운로드되었습니다!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('파일 다운로드 중 오류가 발생했습니다.', 'warning');
+            }
+        }
+
+        function navigateAppSection(target) {
+// ... existing code ... -->
